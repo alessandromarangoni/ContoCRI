@@ -1,5 +1,8 @@
 package it.betacom.main;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import it.betacom.model.Conto;
 import it.betacom.model.ContoCorrente;
 import it.betacom.model.ContoFactory;
@@ -26,8 +29,6 @@ public class Main {
         }
 
         contoCorrente.generaInteressi();
-
-        
         
         System.out.println(" saldo " + contoCorrente.getSaldo() + " titolare " + contoCorrente.getTitolare() + " tasso "
                 + contoCorrente.getTassoDiInteresse() + " apertura conto " + contoCorrente.getDataApertura());

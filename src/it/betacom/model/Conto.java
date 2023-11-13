@@ -17,6 +17,7 @@ public abstract class Conto {
 	protected double saldo;
 	protected List<Movimento> listaMovimenti;
 	protected double tassoDiInteresse;
+	public List<ArrayList<Movimento>> listaInAnni;
 	
 	public Conto(String titolare) {
 		
@@ -24,21 +25,21 @@ public abstract class Conto {
         this.dataApertura = LocalDate.of(2021,01,01);
         this.listaMovimenti = new ArrayList<Movimento>();
         this.tassoDiInteresse= 0.07;
+        
     }
 	
 	
 
 	
-	
 	public void generaInteressi() {
-		
-		//inizializzo anno
+
+		// inizializzo anno
 		int year = 2020;
 
-		//lista contenente liste di movimenti divise per anno
-		List<ArrayList<Movimento>> listaGenerica = new ArrayList<>();
-		
-		//liste di movimenti divise per anno
+		// lista contenente liste di movimenti divise per anno
+		this.listaInAnni = new ArrayList<>();
+
+		// liste di movimenti divise per anno
 		ArrayList<Movimento> listaAnno1 = new ArrayList<>(listaMovimenti.stream()
 				.filter(movimento -> movimento.getDataOperazione().getYear() == 2021).collect(Collectors.toList()));
 		ArrayList<Movimento> listaAnno2 = new ArrayList<>(listaMovimenti.stream()
@@ -46,32 +47,32 @@ public abstract class Conto {
 		ArrayList<Movimento> listaAnno3 = new ArrayList<>(listaMovimenti.stream()
 				.filter(movimento -> movimento.getDataOperazione().getYear() == 2023).collect(Collectors.toList()));
 
-		//aggiunte alla lista generica
-		listaGenerica.add(listaAnno1);
-		listaGenerica.add(listaAnno2);
-		listaGenerica.add(listaAnno3);
+		// aggiunte alla lista generica
+		listaInAnni.add(listaAnno1);
+		listaInAnni.add(listaAnno2);
+		listaInAnni.add(listaAnno3);
 
 		double interessiAnniPrecedenti = 0;
 		double interesseTotale = 0;
 		double interesseTemporaneo = 0;
-		
+
 		double saldoPeriodo = 0;
 		long periodo = 0;
 		double interesseGiornaliero = 0;
-		
+
 		double saldoAlCambioAnno = 0;
-		
-		
+		double interessiNetti = 0;
+
 		// ciclo su ogni lista
-		for (ArrayList<Movimento> listaAnno : listaGenerica) {
-	
+		for (ArrayList<Movimento> listaAnno : listaInAnni) {
+
 			// verifico che la data abbia transazioni e che l anno è diverso dalla data
 			// attuale
 			if (!listaAnno.isEmpty() && listaAnno.get(0).getDataOperazione().getYear() != LocalDate.now().getYear()) {
 
 				// prendo l ultimo movimento che mi serve per accedere al saldo
 				Movimento ultimoMovimento = listaAnno.get(listaAnno.size() - 1);
-				
+
 				double SaldoUltimoMOvimento = ultimoMovimento.getSaldoDopoOperazione();
 
 				// aggiungo un anno ogni iterazione del ciclo
@@ -96,11 +97,10 @@ public abstract class Conto {
 
 				// qui li ordino per data
 				Collections.sort(listaAnno);
-				
+
 				listaAnno.forEach(movimento -> System.out.println(movimento.getDataOperazione() + " - "
 						+ movimento.getTipoOperazione() + " - " + movimento.getImportoOperazione()));
-				
-				
+
 				// ciclo sugli elementi della sottolista
 				for (int i = 1; i < listaAnno.size(); i++) {
 
@@ -108,9 +108,9 @@ public abstract class Conto {
 					Movimento mov = listaAnno.get(i);
 					// mmovimento precedente
 					Movimento movPrecedente = listaAnno.get(i - 1);
-					
+
 					// il saldo in quel periodo è determinato dal movimento attuale
-					
+
 					saldoPeriodo = movPrecedente.saldoDopoOperazione + interessiAnniPrecedenti;
 
 					System.out.println("saldo periodo " + saldoPeriodo);
@@ -129,38 +129,44 @@ public abstract class Conto {
 
 					// interesse temporaneo maturato
 					interesseTemporaneo += interesseGiornaliero * periodo;
-					
+
 					System.out.println("interesse temporaneo " + interesseTemporaneo);
-					
+
 					System.out.println("saldo = " + saldoPeriodo);
 
 				}
-				
-				
+
 				interesseTotale += interesseTemporaneo;
-				
-				saldoPeriodo += interesseTotale;
-				
-				interessiAnniPrecedenti += interesseTotale;
-				
-				System.out.println("saldo dopo interessi = " + saldoPeriodo + "interessi maturati nell anno " + year + " = " + interesseTotale);
+
+				interessiNetti = interesseTotale - (interesseTotale * 0.26);
+
+				saldoPeriodo += interessiNetti;
+
+				interessiAnniPrecedenti += interessiNetti;
+
+				System.out.println("saldo dopo interessi = " + saldoPeriodo + "interessi netti maturati nell anno "
+						+ year + " = " + interessiNetti);
 
 				interesseTemporaneo = 0;
-				
-				interesseTotale = 0;
-				
+
 				saldoAlCambioAnno = saldoPeriodo;
-				
+
 				System.out.println(saldoAlCambioAnno);
-				
+
 				System.out.println("fine");
 
+				generaEstrattoconto(listaAnno, year, saldoPeriodo, interessiAnniPrecedenti, interesseTotale,
+						interessiNetti);
+
+				interesseTotale = 0;
+
 				// se siamo nell anno corrente
-			} else if (!listaAnno.isEmpty() && listaAnno.get(0).getDataOperazione().getYear() == LocalDate.now().getYear()) {
+			} else if (!listaAnno.isEmpty()
+					&& listaAnno.get(0).getDataOperazione().getYear() == LocalDate.now().getYear()) {
 
 				// prendo l ultimo movimento che mi serve per accedere al saldo
 				Movimento ultimoMovimento = listaAnno.get(listaAnno.size() - 1);
-				
+
 				double SaldoUltimoMOvimento = ultimoMovimento.getSaldoDopoOperazione();
 
 				// aggiungo un anno ogni iterazione del ciclo
@@ -170,10 +176,9 @@ public abstract class Conto {
 				Movimento movimentoInizioAnno = new Movimento(LocalDate.of(year, 1, 1), TipoOperazione.VERSAMENTO, 0);
 				// creo movimento in data attuale per calcolare gli interessi arrivando fino a
 				// quella data
-				
+
 				Movimento movimentoInDataAttuale = new Movimento(LocalDate.now(), TipoOperazione.VERSAMENTO, 0);
 				movimentoInDataAttuale.saldoDopoOperazione = SaldoUltimoMOvimento;
-				
 
 				System.out.println("Movimenti dopo il sort:");
 
@@ -188,11 +193,10 @@ public abstract class Conto {
 
 				// qui li ordino per data
 				Collections.sort(listaAnno);
-				
+
 				listaAnno.forEach(movimento -> System.out.println(movimento.getDataOperazione() + " - "
 						+ movimento.getTipoOperazione() + " - " + movimento.getImportoOperazione()));
-				
-				
+
 				// ciclo sugli elementi della sottolista
 				for (int i = 1; i < listaAnno.size(); i++) {
 
@@ -200,9 +204,9 @@ public abstract class Conto {
 					Movimento mov = listaAnno.get(i);
 					// mmovimento precedente
 					Movimento movPrecedente = listaAnno.get(i - 1);
-					
+
 					// il saldo in quel periodo è determinato dal movimento attuale
-					
+
 					saldoPeriodo = movPrecedente.saldoDopoOperazione + interessiAnniPrecedenti;
 
 					System.out.println("saldo periodo " + saldoPeriodo);
@@ -221,56 +225,89 @@ public abstract class Conto {
 
 					// interesse temporaneo maturato
 					interesseTemporaneo += interesseGiornaliero * periodo;
-					
+
 					System.out.println("interesse temporaneo " + interesseTemporaneo);
-					
+
 					System.out.println("saldo = " + saldoPeriodo);
 
 				}
-				
-				
+
+				//interesse Lordo 
 				interesseTotale += interesseTemporaneo;
 				
-				saldoPeriodo += interesseTotale;
-				
-				interessiAnniPrecedenti += interesseTotale;
-				
-				System.out.println("saldo dopo interessi = " + saldoPeriodo + "interessi maturati nell anno " + year + " = " + interesseTotale);
+				//netto
+				interessiNetti = interesseTotale - (interesseTotale * 0.26);
+
+				//IL SALDO DI QUEL PERIODO DIVENTA += AGLI INTERESSI NETTI 
+				saldoPeriodo += interessiNetti;
+
+				//interessi dell anno precedente interessiNetti
+				interessiAnniPrecedenti += interessiNetti;
+
+				System.out.println("saldo dopo interessi = " + saldoPeriodo + "interessi netti maturati nell anno "
+						+ year + " = " + interessiNetti);
 
 				interesseTemporaneo = 0;
-				
-				interesseTotale = 0;
-				
+
 				saldoAlCambioAnno = saldoPeriodo;
-				
+
 				System.out.println(saldoAlCambioAnno);
-				
+
 				System.out.println("fine");
 
-				// se siamo nell anno corrente
+				generaEstrattoconto(listaAnno, year, saldoPeriodo, interessiAnniPrecedenti, interesseTotale,
+						interessiNetti);
+
+				interesseTotale = 0;
+
 			} else {
 				year++;
-				
-				interesseGiornaliero = (saldoAlCambioAnno *  this.tassoDiInteresse) / 365 ;
-				
-				System.out.println("tasso di interesse giornaliero "+ interesseGiornaliero);
-				
+
+				interesseGiornaliero = (saldoAlCambioAnno * this.tassoDiInteresse) / 365;
+
+				System.out.println("tasso di interesse giornaliero " + interesseGiornaliero);
+
 				interesseTotale = interesseGiornaliero * 365;
-				
+
 				System.out.println("tasso di interesse t " + interesseTotale);
-				
+
 				interessiAnniPrecedenti += interesseTotale;
-				
+
 			}
 		}
 
 		this.saldo += interessiAnniPrecedenti;
-		
+
 		System.out.println();
 
 	}
 	
 
+	public void generaEstrattoconto(ArrayList<Movimento> listaAnno, int year ,double saldoPeriodo ,double interessiAnniPrecedenti ,double interesseTotale, double interessiNetti) {
+		
+			System.out.println();
+			System.out.println( "|Estratto conto di" + this.titolare + " " + year);
+			System.out.println();
+			System.out.println("|Data Operazione   |" + " TipoOperazione    " + "| Importo   "  + "| Saldo Parziale");
+			System.out.println();
+			for (int i = 1; i < listaAnno.size(); i++) {
+				if(year > 2021) {
+					System.out.println("|"+ listaAnno.get(i).getDataOperazione() + "        | " +  listaAnno.get(i).getTipoOperazione().toString() + "        | " 
+					+ listaAnno.get(i).getImportoOperazione() + "         | " + (listaAnno.get(i).saldoDopoOperazione +(interessiAnniPrecedenti - interessiNetti) ));
+					System.out.println((listaAnno.get(i).saldoDopoOperazione +(interessiAnniPrecedenti - interessiNetti) ));
+				}else {
+					System.out.println("|"+ listaAnno.get(i).getDataOperazione() + "        | " +  listaAnno.get(i).getTipoOperazione().toString() + "       | " 
+					+ listaAnno.get(i).getImportoOperazione() + "         | " + listaAnno.get(i).saldoDopoOperazione);
+				}
+			}
+			System.out.println();
+			System.out.println("Saldo Disponibile: " + ( year > 2021 ? (listaAnno.get(listaAnno.size()-1).getSaldoDopoOperazione() + (interessiAnniPrecedenti - interessiNetti) ) : listaAnno.get(listaAnno.size()-1).getSaldoDopoOperazione()) );
+			System.out.println("interessi Lordi Maturati:  " + interesseTotale);
+			System.out.println("interessi Netti Maturati:  " + interessiNetti);
+			System.out.println();
+			System.out.println("Saldo finale in data " + listaAnno.get(listaAnno.size()-1).getDataOperazione() + " " + (listaAnno.get(listaAnno.size()-1).getSaldoDopoOperazione() + (interessiAnniPrecedenti) ));
+		}
+	
 	public String getTitolare() {
 		return titolare;
 	}
