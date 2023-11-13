@@ -17,15 +17,18 @@ public class Main {
             contoCorrente.versamento(0, 2021);
         }
 
-       
-
         for (int i = 0; i < 3; i++) {
             contoCorrente.versamento(10, 2022);
+        }
+        
+        for (int i = 0; i < 3; i++) {
+            contoCorrente.versamento(0, 2023);
         }
 
         contoCorrente.generaInteressi();
 
-
+        
+        
         System.out.println(" saldo " + contoCorrente.getSaldo() + " titolare " + contoCorrente.getTitolare() + " tasso "
                 + contoCorrente.getTassoDiInteresse() + " apertura conto " + contoCorrente.getDataApertura());
 

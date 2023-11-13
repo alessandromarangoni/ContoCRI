@@ -51,112 +51,225 @@ public abstract class Conto {
 		listaGenerica.add(listaAnno2);
 		listaGenerica.add(listaAnno3);
 
+		double interessiAnniPrecedenti = 0;
 		double interesseTotale = 0;
 		double interesseTemporaneo = 0;
+		
 		double saldoPeriodo = 0;
 		long periodo = 0;
 		double interesseGiornaliero = 0;
-
-		//ciclo su ogni lista
+		
+		double saldoAlCambioAnno = 0;
+		
+		
+		// ciclo su ogni lista
 		for (ArrayList<Movimento> listaAnno : listaGenerica) {
-
-			//verifico che la data abbia transazioni e che l anno è diverso dalla data attuale
+	
+			// verifico che la data abbia transazioni e che l anno è diverso dalla data
+			// attuale
 			if (!listaAnno.isEmpty() && listaAnno.get(0).getDataOperazione().getYear() != LocalDate.now().getYear()) {
 
-				//prendo l ultimo movimento che mi serve per accedere al saldo
+				// prendo l ultimo movimento che mi serve per accedere al saldo
 				Movimento ultimoMovimento = listaAnno.get(listaAnno.size() - 1);
+				
 				double SaldoUltimoMOvimento = ultimoMovimento.getSaldoDopoOperazione();
 
-				//aggiungo un anno ogni iterazione del ciclo 
+				// aggiungo un anno ogni iterazione del ciclo
 				year++;
-				
-				//creo movimento a inizio anno (serve soprattutto nel 2022 o 2023)
+
+				// creo movimento a inizio anno (serve soprattutto nel 2022 o 2023)
 				Movimento movimentoInizioAnno = new Movimento(LocalDate.of(year, 1, 1), TipoOperazione.VERSAMENTO, 0);
-				//creo movimento a fine anno per calcolare gli interessi arrivando fino a quella data
+				// creo movimento a fine anno per calcolare gli interessi arrivando fino a
+				// quella data
 				Movimento movimentoFineAnno = new Movimento(LocalDate.of(year, 12, 31), TipoOperazione.VERSAMENTO, 0);
 
 				System.out.println("Movimenti dopo il sort:");
-				
-				//aggiungo i movimenti
-				listaAnno.add(movimentoInizioAnno);
-				
-				movimentoInizioAnno.saldoDopoOperazione = listaAnno.get(0).getSaldoDopoOperazione();;
 
-				//in questo caso serve assegnare il valore dell ultimo movimento come saldo dopo operazione per poter calcolare gli interessi
+				// aggiungo i movimenti
+				listaAnno.add(movimentoInizioAnno);
+				movimentoInizioAnno.saldoDopoOperazione = listaAnno.get(0).getSaldoDopoOperazione();
+
+				// in questo caso serve assegnare il valore dell ultimo movimento come saldo
+				// dopo operazione per poter calcolare gli interessi
 				listaAnno.add(movimentoFineAnno);
 				movimentoFineAnno.saldoDopoOperazione = SaldoUltimoMOvimento;
 
-				//qui li ordino per data
+				// qui li ordino per data
 				Collections.sort(listaAnno);
-
 				
 				listaAnno.forEach(movimento -> System.out.println(movimento.getDataOperazione() + " - "
 						+ movimento.getTipoOperazione() + " - " + movimento.getImportoOperazione()));
-
-				//ciclo sugli elementi della sottolista
+				
+				
+				// ciclo sugli elementi della sottolista
 				for (int i = 1; i < listaAnno.size(); i++) {
 
-					//movimento corrente 
+					// movimento corrente
 					Movimento mov = listaAnno.get(i);
-					//mmovimento precedente
+					// mmovimento precedente
 					Movimento movPrecedente = listaAnno.get(i - 1);
-					//il saldo in quel periodo è determinato dal movimento attuale
-					saldoPeriodo = mov.saldoDopoOperazione;
+					
+					// il saldo in quel periodo è determinato dal movimento attuale
+					
+					saldoPeriodo = movPrecedente.saldoDopoOperazione + interessiAnniPrecedenti;
 
 					System.out.println("saldo periodo " + saldoPeriodo);
 
+					// conto i giorni dalla transazione precendente a quella attuale
 					periodo = ChronoUnit.DAYS.between(movPrecedente.getDataOperazione(), mov.getDataOperazione());
 
 					System.out.println("periodo " + periodo);
 
+					// interesse giornaliero
+					interesseGiornaliero = (saldoPeriodo * this.tassoDiInteresse) / 365.0;
+
+					System.out.println("saldoPeriodo " + saldoPeriodo);
+
+					System.out.println("interesse giornaliero " + interesseGiornaliero);
+
+					// interesse temporaneo maturato
+					interesseTemporaneo += interesseGiornaliero * periodo;
+					
+					System.out.println("interesse temporaneo " + interesseTemporaneo);
+					
+					System.out.println("saldo = " + saldoPeriodo);
+
+				}
+				
+				
+				interesseTotale += interesseTemporaneo;
+				
+				saldoPeriodo += interesseTotale;
+				
+				interessiAnniPrecedenti += interesseTotale;
+				
+				System.out.println("saldo dopo interessi = " + saldoPeriodo + "interessi maturati nell anno " + year + " = " + interesseTotale);
+
+				interesseTemporaneo = 0;
+				
+				interesseTotale = 0;
+				
+				saldoAlCambioAnno = saldoPeriodo;
+				
+				System.out.println(saldoAlCambioAnno);
+				
+				System.out.println("fine");
+
+				// se siamo nell anno corrente
+			} else if (!listaAnno.isEmpty() && listaAnno.get(0).getDataOperazione().getYear() == LocalDate.now().getYear()) {
+
+				// prendo l ultimo movimento che mi serve per accedere al saldo
+				Movimento ultimoMovimento = listaAnno.get(listaAnno.size() - 1);
+				
+				double SaldoUltimoMOvimento = ultimoMovimento.getSaldoDopoOperazione();
+
+				// aggiungo un anno ogni iterazione del ciclo
+				year++;
+
+				// creo movimento a inizio anno (serve soprattutto nel 2022 o 2023)
+				Movimento movimentoInizioAnno = new Movimento(LocalDate.of(year, 1, 1), TipoOperazione.VERSAMENTO, 0);
+				// creo movimento in data attuale per calcolare gli interessi arrivando fino a
+				// quella data
+				
+				Movimento movimentoInDataAttuale = new Movimento(LocalDate.now(), TipoOperazione.VERSAMENTO, 0);
+				movimentoInDataAttuale.saldoDopoOperazione = SaldoUltimoMOvimento;
+				
+
+				System.out.println("Movimenti dopo il sort:");
+
+				// aggiungo i movimenti
+				listaAnno.add(movimentoInizioAnno);
+				movimentoInizioAnno.saldoDopoOperazione = listaAnno.get(0).getSaldoDopoOperazione();
+
+				// in questo caso serve assegnare il valore dell ultimo movimento come saldo
+				// dopo operazione per poter calcolare gli interessi
+				listaAnno.add(movimentoInDataAttuale);
+				movimentoInDataAttuale.saldoDopoOperazione = SaldoUltimoMOvimento;
+
+				// qui li ordino per data
+				Collections.sort(listaAnno);
+				
+				listaAnno.forEach(movimento -> System.out.println(movimento.getDataOperazione() + " - "
+						+ movimento.getTipoOperazione() + " - " + movimento.getImportoOperazione()));
+				
+				
+				// ciclo sugli elementi della sottolista
+				for (int i = 1; i < listaAnno.size(); i++) {
+
+					// movimento corrente
+					Movimento mov = listaAnno.get(i);
+					// mmovimento precedente
+					Movimento movPrecedente = listaAnno.get(i - 1);
+					
+					// il saldo in quel periodo è determinato dal movimento attuale
+					
+					saldoPeriodo = movPrecedente.saldoDopoOperazione + interessiAnniPrecedenti;
+
+					System.out.println("saldo periodo " + saldoPeriodo);
+
+					// conto i giorni dalla transazione precendente a quella attuale
+					periodo = ChronoUnit.DAYS.between(movPrecedente.getDataOperazione(), mov.getDataOperazione());
+
+					System.out.println("periodo " + periodo);
+
+					// interesse giornaliero
 					interesseGiornaliero = (saldoPeriodo * this.tassoDiInteresse) / 365.0;
 
 					System.out.println("saldoPeriodo " + saldoPeriodo + "tassodiIntersee" + this.tassoDiInteresse);
 
 					System.out.println("interesse giornaliero " + interesseGiornaliero);
 
+					// interesse temporaneo maturato
 					interesseTemporaneo += interesseGiornaliero * periodo;
-
+					
 					System.out.println("interesse temporaneo " + interesseTemporaneo);
+					
+					System.out.println("saldo = " + saldoPeriodo);
 
 				}
+				
+				
+				interesseTotale += interesseTemporaneo;
+				
+				saldoPeriodo += interesseTotale;
+				
+				interessiAnniPrecedenti += interesseTotale;
+				
+				System.out.println("saldo dopo interessi = " + saldoPeriodo + "interessi maturati nell anno " + year + " = " + interesseTotale);
 
+				interesseTemporaneo = 0;
+				
+				interesseTotale = 0;
+				
+				saldoAlCambioAnno = saldoPeriodo;
+				
+				System.out.println(saldoAlCambioAnno);
+				
 				System.out.println("fine");
 
-			} else if(!listaAnno.isEmpty() && listaAnno.get(0).getDataOperazione().getYear() == LocalDate.now().getYear()){
-				
-				
-				Movimento ultimoMovimentoEffettuato = listaAnno.get(listaAnno.size() - 1);
-				double SaldoUltimoMOvimento = ultimoMovimentoEffettuato.getSaldoDopoOperazione();
-				
-				Movimento movimentoInizioAnno = new Movimento(LocalDate.of(year, 1, 1), TipoOperazione.VERSAMENTO, 0);
-				
-				
-				Movimento movimentoInDataAttuale = new Movimento(LocalDate.now(), TipoOperazione.VERSAMENTO, 0);
-				movimentoInDataAttuale.saldoDopoOperazione = SaldoUltimoMOvimento;
-				
-				
+				// se siamo nell anno corrente
+			} else {
 				year++;
 				
+				interesseGiornaliero = (saldoAlCambioAnno *  this.tassoDiInteresse) / 365 ;
 				
+				System.out.println("tasso di interesse giornaliero "+ interesseGiornaliero);
 				
-				System.out.println("la lista è vuota");
+				interesseTotale = interesseGiornaliero * 365;
+				
+				System.out.println("tasso di interesse t " + interesseTotale);
+				
+				interessiAnniPrecedenti += interesseTotale;
+				
 			}
-			DecimalFormat df = new DecimalFormat("#0.00");
-			System.out.println("Interesse maturato nell'anno " + (year) + ": " + df.format(interesseTemporaneo));
-			
-			interesseTotale += interesseTemporaneo;
-			interesseTemporaneo = 0;
-			this.saldo += interesseTotale;
-
-			
-
 		}
 
+		this.saldo += interessiAnniPrecedenti;
+		
 		System.out.println();
 
 	}
-
+	
 
 	public String getTitolare() {
 		return titolare;
@@ -243,11 +356,18 @@ public abstract class Conto {
 	
 	
 	private LocalDate generaData(LocalDate dataRiferimento, LocalDate dataAttuale) {
-	    long dataDiRiferimento = dataRiferimento.until(dataAttuale, ChronoUnit.DAYS) + 1;
-	    long GiorniAggiunti = ThreadLocalRandom.current().nextLong(dataDiRiferimento);
+		
+	    if (dataAttuale.getYear() == LocalDate.now().getYear()) {
+	        long giorniMancanti = dataRiferimento.until(LocalDate.now(), ChronoUnit.DAYS);
+	        long giorniGenerabili = ThreadLocalRandom.current().nextLong(Math.min(giorniMancanti, 365));
 
-	    return dataRiferimento.plusDays(GiorniAggiunti);
+	        return dataRiferimento.plusDays(giorniGenerabili);
+	    } else {
+	        long giorniMancanti = dataRiferimento.until(dataAttuale, ChronoUnit.DAYS) + 1;
+	        long giorniGenerabili = ThreadLocalRandom.current().nextLong(giorniMancanti);
+
+	        return dataRiferimento.plusDays(giorniGenerabili);
+	    }
 	}
-
 	
 }
