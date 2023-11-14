@@ -6,11 +6,14 @@ public class ContoFactory {
     public Conto generaConto(String tipoConto, String titolare) {
         if ("ContoCorrente".equalsIgnoreCase(tipoConto)) {
             return new ContoCorrente(titolare);
-        } else if ("AltroTipoDiConto".equalsIgnoreCase(tipoConto)) {
-//            return new AltroTipoDiConto(titolare, dataApertura, saldo, tassoDiInteresse);
-        }
+        } else if ("ContoRisparmio".equalsIgnoreCase(tipoConto)) {
+           return new contoRisparmio(titolare);
+        }else if ("ContoInvestimenti".equalsIgnoreCase(tipoConto)) {
+            return new ContoInvestimenti(titolare);
+         }
 
         return null;
     }
+    
 }
 
