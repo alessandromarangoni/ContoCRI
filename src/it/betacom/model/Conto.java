@@ -394,7 +394,7 @@ public abstract class Conto {
 	}
 	
 	
-	private LocalDate generaData(LocalDate dataRiferimento, LocalDate dataAttuale) {
+	protected LocalDate generaData(LocalDate dataRiferimento, LocalDate dataAttuale) {
 		
 	    if (dataAttuale.getYear() == LocalDate.now().getYear()) {
 	        long giorniMancanti = dataRiferimento.until(LocalDate.now(), ChronoUnit.DAYS);
